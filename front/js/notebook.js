@@ -2,6 +2,82 @@
  * Requires editor.js to be loaded!
  */
 
+/*
+ * CELL CSS & HTML TEMPLATE. 
+ */
+let CELL_CSS = "<style type='text/css'>\n" +
+               "pre.content { " +
+                    "border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important;" +
+                    "margin-top: 0 !important;" +
+                    "margin-bottom: 0 !important;" +
+               " }\n" +
+               "pre.output { " +
+                    "border-radius: 0px !important;" +
+                    "margin-top: 0 !important;" +
+                    "margin-bottom: 0 !important;" +
+                    "max-height: 50vh;" +
+                    "overflow: scroll;" +
+               " }\n" +
+               "table.info { " +
+                    "font-size: x-small;" +
+                    "margin-top: 0 !important;" +
+                    "margin-bottom: 0 !important;" +
+               " }\n" +
+               "td.info-value, td.info-label, td.info-controls { " +
+                    "white-space: pre !important;" +
+                    "vertical-align: middle !important;" +
+                    "padding-top: 0 !important;" +
+                    "padding-bottom: 0 !important;" +
+               " }\n" + 
+               "td.info-label { " +
+                    "text-align: right !important;" +
+                    "border-right: 0 !important;" +
+                    "padding-right: 0 !important;" +
+               " }\n" +
+               "td.info-value { " +
+                    "text-align: left !important;" +
+                    "border-left: 0 !important;" +
+                    "padding-left: 0 !important;" +
+               " }\n" +
+               ".fullwidth { " +
+                    "width: 100% !important;" +
+               " }\n" + 
+               "</style>";
+
+let CELL_HTML = "<div class='row' id='top-{ID}'><div class='col-xs-12 idle'>" +
+
+                "<pre class='content'>" +
+                "<code class='python code' contenteditable='true' id='editor-{ID}' spellcheck='false'></code>" +
+                "</pre>" +
+
+                "<pre id='output-{ID}' class='well well-sm output'></pre>" +
+
+                "<table class='table table-bordered info'><tr>" +
+                    "<td class='info-label'>Item: </td>" +
+                    "<td class='info-value' id='item-{ID}'>0</td>" +
+                    "<td class='info-label'>Order: </td>" +
+                    "<td class='info-value' id='order-{ID}'>0</td>" +
+                    "<td class='info-label'>Type: </td>" +
+                    "<td class='info-value' id='type-{ID}'>Code-Primary</td>" +
+                    "<td class='info-label'>State: </td>" +
+                    "<td class='info-value' id='state-{ID}'>Idle</td>" +
+                    "<td class='info-label'>Tags: </td>" +
+                    "<td class='info-value fullwidth'>" +
+                        "<input type='text' class='fullwidth' id='tags-{ID}'></input></td>" +
+                    "<td class='info-controls'>" +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-play"></span></a>' +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-stop"></span></a>' +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-plus"></span></a>' +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-erase"></span></a>' +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-chevron-up"></span></a>' +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-chevron-down"></span></a>' +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-scissors"></span></a>' +
+                        '<a href="#" class="btn btn-xs btn-outline-primary"><span class="glyphicon glyphicon-wrench"></span></a>' +
+                    "</td>" +
+                "</tr></table>" +
+
+                "</div></div>";
+
 function guid() {
   /* from https://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript */
   function s4() {
@@ -16,147 +92,120 @@ function replaceAll(str, find, replace) {
 }
 
 function Cell(anchor, position, notebook) {
-    CELL_HTML = "<div class='row' id='top-{ID}' style='margin-bottom: 1.5em'><div class='col-xs-12 idle'>" +
 
-                '<div style="position: absolute; top: -10px; left: 50%; margin-left: -175px; width: 350px; text-align: center">' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-play"></span></a> ' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-stop"></span></a> ' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-plus"></span></a> ' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-erase"></span></a> ' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-chevron-up"></span></a> ' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-chevron-down"></span></a> ' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-scissors"></span></a> ' +
-                '<a href="#" class="controls"><span class="glyphicon glyphicon-wrench"></span></a>' +
-                '</div>' +
+    var self = {};
 
-                "<pre tabindex='0' style='margin-bottom: 0px'>" +
-                "<code class='python code' contenteditable='true' id='editor-{ID}' spellcheck='false'></code>" +
-                "</pre>" +
+    self.guid = guid();
+    self.nextCell = null;
+    self.prevCell = null;
+    self.state = 'Idle';
+    self.notebook = notebook;
 
-                "<div id='run-{ID}' style='display: none'>" +
-                "<pre id='output-{ID}' class='well well-sm' style='margin-bottom: 0'></pre>" +
-                "<table class='table table-bordered' style='margin-top: 0; font-size: x-small'>" +
-                    "<tr><td id='item-{ID}' style='white-space: pre'>Item: 0</td>" +
-                    "<td id='state-{ID}' style='width: 100%'>State: Idle</td>" + 
-                    "<td id='order-{ID}' style='white-space: pre'>Order: 0</td></tr>" +
-                "</table>" +
-                "</div>" +
-                "</div></div>"
+    notebook[self.guid] = self;
 
-    function cell(anchor, position, notebook) {
-        this.guid = guid();
-        this.nextCell = null;
-        this.prevCell = null;
-        this.state = 'idle';
+    var html = CELL_HTML;
+    html = replaceAll(html, "{ID}", self.guid);
 
-        this.notebook = notebook
-        notebook[this.guid] = this;
+    anchor.insertAdjacentHTML(position, html);
 
-        var html = CELL_HTML;
-        var html = replaceAll(html, "{ID}", this.guid);
+    self.editorNode = document.getElementById('editor-' + self.guid);
+    self.outputNode = document.getElementById('output-' + self.guid);
 
-        anchor.insertAdjacentHTML(position, html);
+    self.itemNode = document.getElementById('item-' + self.guid);
+    self.stateNode = document.getElementById('state-' + self.guid);
+    self.orderNode = document.getElementById('order-' + self.guid);
 
-        this.editorNode = document.getElementById('editor-' + this.guid);
-        this.outputNode = document.getElementById('output-' + this.guid);
-    
-        this.itemNode = document.getElementById('item-' + this.guid);
-        this.stateNode = document.getElementById('state-' + this.guid);
-        this.orderNode = document.getElementById('order-' + this.guid);
+    self.topNode = document.getElementById('top-' + self.guid);
 
-        this.runNode = document.getElementById('run-' + this.guid);
-        this.topNode = document.getElementById('top-' + this.guid);
+    self.editor = Editor(self.editorNode);
 
-        this.editor = Editor(this.editorNode);
+    self.focus = function() {
+        self.editorNode.focus();
     }
 
-    cell.prototype.focus = function() {
-        this.editorNode.focus();
+    self.detach = function() {
+        if (self.prevCell)
+            self.prevCell.nextCell = self.nextCell;
+        if (self.nextCell)
+            self.nextCell.prevCell = self.prevCell;
     }
 
-    cell.prototype.detach = function() {
-        if (this.prevCell)
-            this.prevCell.nextCell = this.nextCell;
-        if (this.nextCell)
-            this.nextCell.prevCell = this.prevCell;
-    }
-
-    cell.prototype.attach = function(cell) {
-        if (this.nextCell === cell)
+    self.attach = function(cell) {
+        if (self.nextCell === cell)
             return cell;
         cell.detach()
-        if (this.nextCell)
-            this.nextCell.prevCell = cell;
+        if (self.nextCell)
+            self.nextCell.prevCell = cell;
 
-        cell.nextCell = this.nextCell;
-        cell.prevCell = this;
-        this.nextCell = cell;      
+        cell.nextCell = self.nextCell;
+        cell.prevCell = self;
+        self.nextCell = cell;      
     }
 
-    cell.prototype.next = function() {
-        return this.nextCell;
+    self.next = function() {
+        return self.nextCell;
     }
 
-    cell.prototype.code = function() {
-        return this.editor.node.innerText;
+    self.code = function() {
+        return self.editor.node.innerText;
     }
 
-    cell.prototype.change_status = function(state) {
+    self.change_status = function(state) {
         if (state)
-            this.state = state;
+            self.state = state;
         else
-            this.state = 'Idle';
+            self.state = 'Idle';
 
-        var state_html = this.state;
-        if (this.state == 'Running') {
-            this.runNode.style.display = 'block';
-            state_html = '<span style="color: red">Running</span>';
+        var state_html = self.state;
+        if (self.state == 'Running') {
+            self.outputNode.style.display = 'block';
+            state_html = 'Running';
         }
 
-        this.stateNode.innerHTML = 'State: ' + state_html;
+        self.stateNode.innerHTML = 'State: ' + state_html;
     }
 
-    cell.prototype.write = function(answer) {
-        this.outputNode.innerHTML += answer;
+    self.write = function(answer) {
+        self.outputNode.innerHTML += answer;
     }
 
-    cell.prototype.clear = function(answer) {
-        this.runNode.style.display = 'none';
-        this.outputNode.innerText = '';
+    self.clear = function(answer) {
+        self.outputNode.style.display = 'none';
+        self.outputNode.innerText = '';
     }
 
-    cell.prototype.forward = function() {
-        if (this.nextCell) {
-            this.nextCell.focus()
+    self.forward = function() {
+        if (self.nextCell) {
+            self.nextCell.focus()
             return;
         }
 
-        var cell = Cell(this.topNode, 'afterend', this.notebook);
+        var cell = Cell(self.topNode, 'afterEnd', self.notebook);
 
-        cell.prevCell = this;
-        this.nextCell = cell;
+        cell.prevCell = self;
+        self.nextCell = cell;
 
         cell.focus();
     }
 
-    var c = new cell(anchor, position, notebook);
-
-    c.editorNode.addEventListener('keydown', function(e) {
+    self.editorNode.addEventListener('keydown', function(e) {
         var key = e.keyCode || e.charCode;
         if (key == 13 && e.shiftKey) {
             e.preventDefault();
-            c.forward();
-            if (c.notebook.events.submit)
-                c.notebook.events.submit(c);
+            self.forward();
+            if (self.notebook.events.submit)
+                self.notebook.events.submit(self);
         }
     });
 
-    return c;
+    return self;
 }
 
 function Notebook(container) {
+    container.insertAdjacentHTML('beforeBegin', CELL_CSS);
+
     var notebook = {events: {}, cells: {}};
-    var cell = Cell(container, 'beforeend', notebook);
+    var cell = Cell(container, 'beforeEnd', notebook);
 
     return notebook;
 }

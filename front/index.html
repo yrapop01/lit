@@ -2,34 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Yuri Rapoport">
+    <link rel="icon" href="images/favicon.ico">
 
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!--link rel="icon" href="favicon.ico"-->
+    <title>LIT Notebook</title>
 
-    <title>YUP</title>
+    <!-- External Libraries -->
+    <script src="extern/jQuery/jquery.min.js"></script>
+    <link href="extern/Bootstrap/bootstrap.min.css" rel="stylesheet">
+    <script src="extern/Bootstrap/bootstrap.min.js"></script>
+    <link href="extern/highlight.js/highlight.min.css" rel="stylesheet">
+    <script src="extern/highlight.js/highlight.min.js"></script>
 
-    <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <!--link href="lib/bootstrap/darkly.theme.min.css" rel="stylesheet"-->
+    <!-- External Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Slab" rel="stylesheet">
 
-    <!--link rel="stylesheet" href="lib/highlight/highlight.style.css"-->
-    <link rel="stylesheet" href="lib/highlight/highlight.min.css">
-    <script src="lib/highlight/highlight.min.js"></script>
-
-    <link rel="stylesheet" href="lib/xterm/xterm.css" />
-    <script src="lib/xterm/xterm.js"></script>
-    <script src="lib/xterm/addons/fit/fit.js"></script>
-
-    <script src='lib/socket.io.js'></script>
-
+    <!-- Major Imports -->
     <script src="js/editor.js"></script>
     <script src="js/notebook.js"></script>
 
-    <link href="css/style.css" rel="stylesheet">
-
     <style>
+        span.logo {
+            font-family: 'Roboto Slab', serif;
+        }
+        img.logo {
+            height: 2em;
+        }
         nav > ul { display: table; width: 100%; margin: 0; padding: 0}
         nav > ul > li { display: table-cell; float: none;
                         padding-left: 3px; padding-right: 3px }
@@ -37,12 +36,12 @@
   </head>
 
   <body>
-    <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-default">
       <ul class="container">
         <li>
-            <a href="#" type="button" class="btn btn-primary navbar-btn"
+            <a href="#" type="button" class="btn btn-outline-primary navbar-btn"
                onclick="this.blur();">
-              <span class="glyphicon glyphicon-send"></span> YUP
+              <img src="images/logo.png" align="middle" class="logo"></img> <span class="logo">LIT</span>
             </a>
         </li>
         <li>
@@ -58,10 +57,9 @@
             </a>
         </li>
         <li style="width: 100%">
-            <a href="#" type="button" class="btn btn-primary navbar-btn"
+            <a href="#" type="button" class="btn btn-default navbar-btn"
                style="width: 100%; text-align: center"
-               onclick="this.blur();">
-               Untitled
+               onclick="this.blur();"> Untitled
             </a>
         </li>
        <li>
@@ -88,17 +86,20 @@
 
     <div class="container" id="container">
         <script>
-            function escapeHtml(unsafe) {
-                return unsafe
-                     .replace(/&/g, "&amp;")
-                     .replace(/</g, "&lt;")
-                     .replace(/>/g, "&gt;")
-                     .replace(/"/g, "&quot;")
-                     .replace(/'/g, "&#039;");
-            }
-
             var notebook = Notebook(document.getElementById('container'), {});
+
+            /*
             var socket = io({transports: ['websocket'], upgrade: false});
+               function escapeHtml(unsafe) {
+                    return unsafe
+                         .replace(/&/g, "&amp;")
+                         .replace(/</g, "&lt;")
+                         .replace(/>/g, "&gt;")
+                         .replace(/"/g, "&quot;")
+                         .replace(/'/g, "&#039;");
+                }
+
+
 
             socket.on('out', function(data) {
                 var text = '', cls;
@@ -124,14 +125,13 @@
                     s.change_status();
                 });
             };
+            */
         </script>
     </div><!-- /.container -->
     <div style="height: 20%">&nbsp;</div>
 
     <!-- Bootstrap core JavaScript -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
-    <script src="lib/bootstrap/js/bootstrap.min.js"></script>
   </body>
 </html>

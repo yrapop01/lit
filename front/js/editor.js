@@ -165,65 +165,63 @@ function Editor(editor) {
     TAB = 9;
     Z = 90;
 
-    function cell(editor) {
-        hljs.highlightBlock(editor);
+    var self = {};
 
-        var self = this;
+    hljs.highlightBlock(editor);
 
-        /* hack to fix weird contenteditable behavior on enters */
-        self.enterPressed = false; 
-        self.node = editor;
+    /* hack to fix weird contenteditable behavior on enters */
+    self.enterPressed = false; 
+    self.node = editor;
 
-        self.undo = new UndoStack(function(state) {
-            self.node.innerHTML = state[0];
-            setCurrentCursorPosition(self.node, state[1]);
-        }, [self.node.innerHTML, 0]);
+    self.undo = new UndoStack(function(state) {
+        self.node.innerHTML = state[0];
+        setCurrentCursorPosition(self.node, state[1]);
+    }, [self.node.innerHTML, 0]);
 
-        editor.addEventListener("input", function(e) {
-            var pos = getCurrentCursorPosition(self.node, self.enterPressed);
+    editor.addEventListener("input", function(e) {
+        var pos = getCurrentCursorPosition(self.node, self.enterPressed);
 
-            self.node.innerText = self.node.innerText; /* remove formatting */
-            hljs.highlightBlock(self.node);
+        self.node.innerText = self.node.innerText; /* remove formatting */
+        hljs.highlightBlock(self.node);
 
-            setCurrentCursorPosition(self.node, pos);
-            self.undo.push([self.node.innerHTML, pos]);
-        });
+        setCurrentCursorPosition(self.node, pos);
+        self.undo.push([self.node.innerHTML, pos]);
+    });
 
-        editor.addEventListener("keyup", function(event) {
-            var key = event.keyCode || event.charCode;
+    editor.addEventListener("keyup", function(event) {
+        var key = event.keyCode || event.charCode;
 
-            if (key == ENTER)
-                self.enterPressed = false;
-        });
+        if (key == ENTER)
+            self.enterPressed = false;
+    });
 
-        editor.addEventListener("keydown", function(event) {
-            var key = event.keyCode || event.charCode;
+    editor.addEventListener("keydown", function(event) {
+        var key = event.keyCode || event.charCode;
 
-            if (key == ENTER)
-                self.enterPressed = true;
- 
-            if (key == BACKSPACE) {
-                var pos = getCurrentCursorPosition(self.node);
+        if (key == ENTER)
+            self.enterPressed = true;
 
-                var j = editor.textContent.substring(0, pos).lastIndexOf('\n');
-                var s = editor.textContent.substring(j, pos);
-                if (!s.trim().length)
-                    for (var i = 0; i < 3 && i < s.length - 1; i++)
-                        document.execCommand('delete', false, null);
-            }
-            if (key == TAB) {
-                document.execCommand('insertText', false, '    ');
-                event.preventDefault();
-            }
-            if (key == Z && (event.ctrlKey || event.metaKey)) {
-                event.preventDefault();
-                if (event.shiftKey)
-                    self.undo.redo();
-                else
-                    self.undo.undo();
-            }
-        });
-    }
+        if (key == BACKSPACE) {
+            var pos = getCurrentCursorPosition(self.node);
 
-    return new cell(editor);
+            var j = editor.textContent.substring(0, pos).lastIndexOf('\n');
+            var s = editor.textContent.substring(j, pos);
+            if (!s.trim().length)
+                for (var i = 0; i < 3 && i < s.length - 1; i++)
+                    document.execCommand('delete', false, null);
+        }
+        if (key == TAB) {
+            document.execCommand('insertText', false, '    ');
+            event.preventDefault();
+        }
+        if (key == Z && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            if (event.shiftKey)
+                self.undo.redo();
+            else
+                self.undo.undo();
+        }
+    });
+
+    return self;
 }
