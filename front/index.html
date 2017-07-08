@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!--link rel="icon" href="favicon.ico"-->
+
+    <title>YUP</title>
+
+    <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!--link href="lib/bootstrap/darkly.theme.min.css" rel="stylesheet"-->
+
+    <!--link rel="stylesheet" href="lib/highlight/highlight.style.css"-->
+    <link rel="stylesheet" href="lib/highlight/highlight.min.css">
+    <script src="lib/highlight/highlight.min.js"></script>
+
+    <link rel="stylesheet" href="lib/xterm/xterm.css" />
+    <script src="lib/xterm/xterm.js"></script>
+    <script src="lib/xterm/addons/fit/fit.js"></script>
+
+    <script src='lib/socket.io.js'></script>
+
+    <script src="js/editor.js"></script>
+    <script src="js/notebook.js"></script>
+
+    <link href="css/style.css" rel="stylesheet">
+
+    <style>
+        nav > ul { display: table; width: 100%; margin: 0; padding: 0}
+        nav > ul > li { display: table-cell; float: none;
+                        padding-left: 3px; padding-right: 3px }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <ul class="container">
+        <li>
+            <a href="#" type="button" class="btn btn-primary navbar-btn"
+               onclick="this.blur();">
+              <span class="glyphicon glyphicon-send"></span> YUP
+            </a>
+        </li>
+        <li>
+            <a href="#" type="button" class="btn btn-default navbar-btn"
+               onclick="this.blur();">
+              <span class="glyphicon glyphicon-plus"></span> New
+            </a>
+        </li>
+        <li>
+            <a href="#" type="button" class="btn btn-default navbar-btn"
+               onclick="this.blur();">
+              <span class="glyphicon glyphicon-duplicate"></span> Duplicate
+            </a>
+        </li>
+        <li style="width: 100%">
+            <a href="#" type="button" class="btn btn-primary navbar-btn"
+               style="width: 100%; text-align: center"
+               onclick="this.blur();">
+               Untitled
+            </a>
+        </li>
+       <li>
+            <a href="#" type="button" class="btn btn-default navbar-btn"
+               onclick="this.blur();">
+              <span class="glyphicon glyphicon-bullhorn"></span> Publish
+            </a>
+        </li>
+   
+       <li>
+            <a href="#" type="button" class="btn btn-default navbar-btn"
+               onclick="this.blur();">
+              <span class="glyphicon glyphicon-retweet"></span> Restart
+            </a>
+        </li>
+        <li>
+            <a href="#" type="button" class="btn btn-default navbar-btn"
+               onclick="this.blur();">
+              <span class="glyphicon glyphicon-cloud-upload"></span> Dump
+            </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="container" id="container">
+        <script>
+            function escapeHtml(unsafe) {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+            var notebook = Notebook(document.getElementById('container'), {});
+            var socket = io({transports: ['websocket'], upgrade: false});
+
+            socket.on('out', function(data) {
+                var text = '', cls;
+
+                if ('out' in data) {
+                    text = escapeHtml(data['out']);
+                    cls = 'text-primary';
+                } else if ('err' in data) {
+                    text = escapeHtml(data['err']);
+                    cls = 'text-danger';
+                }
+
+                if (text) {
+                    var html = '<span class="' + cls +'" style="white-space: pre">' + text + '</span>';
+                    notebook[data['guid']].write(html);
+                }
+            });
+
+            notebook.events.submit = function(s) { 
+                s.clear();
+                s.change_status('Running');
+                socket.emit('run', {'guid': s.guid, 'code': s.code()}, function(answer) {
+                    s.change_status();
+                });
+            };
+        </script>
+    </div><!-- /.container -->
+    <div style="height: 20%">&nbsp;</div>
+
+    <!-- Bootstrap core JavaScript -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+  </body>
+</html>
