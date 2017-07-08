@@ -41,19 +41,19 @@ def print_val(value):
 class Interpreter:
     def __init__(self, files, html):
         self.files = files
-        self.ii = code.InteractiveInterpreter({'__name__': '__yup__'})
+        self.ii = code.InteractiveInterpreter({'__name__': '__lit__'})
 
     def _compile_and_run(self, code, filename):
         try:
             c = compile(code, filename, mode='exec')
             self.ii.runcode(c)
-        except Exception:
+        except (Exception, KeyboardInterrupt):
             print_exc()
 
-    def run(self, code, filename='yupell'):
-        code, expr = save_last_expr(code, '__yup_expr__')
+    def run(self, code, filename='litell'):
+        code, expr = save_last_expr(code, '__lit_expr__')
         if expr:
-            self.ii.locals['__yup_expr__'] = None
+            self.ii.locals['__lit_expr__'] = None
 
         try:
             sys.stdin = self.files[0]
@@ -62,8 +62,8 @@ class Interpreter:
 
             self._compile_and_run(code, filename)
             if expr:
-                print_val(self.ii.locals['__yup_expr__'])
-                self.ii.locals['__yup_expr__'] = None
+                print_val(self.ii.locals['__lit_expr__'])
+                self.ii.locals['__lit_expr__'] = None
         finally:
             sys.stderr = sys.__stderr__
             sys.stdout = sys.__stdout__

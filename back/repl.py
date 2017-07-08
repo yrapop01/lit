@@ -1,4 +1,6 @@
 import sys
+import argparse
+
 from back.interpreter import Interpreter
 from back.repl_proto import Events, encode, decode
 
@@ -33,13 +35,19 @@ def repl():
     files = [io, WriterWrapper(io, Events.OUT), WriterWrapper(io, Events.ERR)]
     interpreter = Interpreter(files, WriterWrapper(io, Events.HTML))
 
-    for line in sys.stdin:
-        event, code = decode(line)
-        if event == Events.RUN:
-            interpreter.run(code)
-            print(encode(Events.DONE), flush=True)
-        else:
-            print(encode(Events.EXC, 'Unkown event %s' % event), flush=True)
+    while True:
+        try:
+            for line in sys.stdin:
+                event, code = decode(line)
+
+                if event == Events.RUN:
+                    interpreter.run(code)
+                    print(encode(Events.DONE), flush=True)
+                else:
+                    print(encode(Events.EXC, 'Unkown event %s' % event), flush=True)
+            break
+        except KeyboardInterrupt:
+            pass
 
 if __name__ == "__main__":
     repl()

@@ -1,33 +1,52 @@
-from sanic import Sanic
+import json
+import asyncio
 import traceback
-import socketio
+from back.shell import acquire, release
 
-from back.repl_http import get_repl
-
-sio = socketio.AsyncServer(async_mode='sanic')
-app = Sanic()
-sio.attach(app)
-
-app.static('/', 'front/')
-
-@sio.on('run')
-async def message(sid, data):
+async def send(ws, data):
+    if not ws:
+        return
     try:
-        name = data.get('repl', sid)
-        code = data['code']
+        message = json.dumps(data)
+        data = await ws.send(message)
+    except Exception as e:
+        traceback.print_exc()
 
-        repl = await get_repl(name)
-        async with repl.get_lock():
-            await repl.run(code)
-
-            out = await repl.readline()
-            while out is not None:
-                out['guid'] = data['guid']
-                await sio.emit('out', out, room=name)
-                out = await repl.readline()
+async def recv(ws):
+    try:
+        data = await ws.recv()
+        action, value = json.loads(data)
+        return action, value
     except Exception as e:
         traceback.print_exc()
         raise
+
+async def run_code(shell, code):
+    with async shell.lock:
+        await shell.run(code)
+        data = await shell.readline()
+
+        while data is not None:
+            await send(shell.user, ['out', data])
+            line = await shell.readline()
+
+async def main(ws):
+    shell = None
+    try:
+        while True:
+            action, value = await recv(ws)
+
+            if action == 'notebook':
+                shell = await acquire(value, ws)
+                if shell is None:
+                    await send(ws, ['error', 'the notebook is busy'])
+            elif action == 'run':
+                asyncio.ensure_future(run_code(shell, code))
+    except Exception as e:
+        traceback.print_exc()
+        raise
+    finally:
+        await release(shell)
 
 if __name__ == '__main__':
     app.run()
