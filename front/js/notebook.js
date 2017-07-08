@@ -11,6 +11,9 @@ let CELL_CSS = "<style type='text/css'>\n" +
                     "margin-top: 0 !important;" +
                     "margin-bottom: 0 !important;" +
                " }\n" +
+               "code.editor { " +
+                    "font-size: normal !important;" +
+               " }\n" +
                "pre.output { " +
                     "border-radius: 0px !important;" +
                     "margin-top: 0 !important;" +
@@ -26,8 +29,8 @@ let CELL_CSS = "<style type='text/css'>\n" +
                "td.info-value, td.info-label, td.info-controls { " +
                     "white-space: pre !important;" +
                     "vertical-align: middle !important;" +
-                    "padding-top: 0 !important;" +
-                    "padding-bottom: 0 !important;" +
+                    "padding-top: 1px !important;" +
+                    "padding-bottom: 1px !important;" +
                " }\n" + 
                "td.info-label { " +
                     "text-align: right !important;" +
@@ -42,12 +45,15 @@ let CELL_CSS = "<style type='text/css'>\n" +
                ".fullwidth { " +
                     "width: 100% !important;" +
                " }\n" + 
+               "div.selectable { " +
+                    "padding-left: 0 !important; padding-right: 0 !important"
+               " }\n" + 
                "</style>";
 
-let CELL_HTML = "<div class='row' id='top-{ID}'><div class='col-xs-12 idle'>" +
+let CELL_HTML = "<div class='row' id='top-{ID}'><div class='col-xs-12'><div class='selectable' tabindex='1'>" +
 
                 "<pre class='content'>" +
-                "<code class='python code' contenteditable='true' id='editor-{ID}' spellcheck='false'></code>" +
+                "<code class='python code editor' contenteditable='true' id='editor-{ID}' spellcheck='false'></code>" +
                 "</pre>" +
 
                 "<pre id='output-{ID}' class='well well-sm output'></pre>" +
@@ -76,7 +82,7 @@ let CELL_HTML = "<div class='row' id='top-{ID}'><div class='col-xs-12 idle'>" +
                     "</td>" +
                 "</tr></table>" +
 
-                "</div></div>";
+                "</div></div></div>";
 
 function guid() {
   /* from https://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript */
