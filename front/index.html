@@ -86,44 +86,83 @@
 
     <div class="container" id="container">
         <script>
+            function escapeHTML(unsafe) {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+            function Connection() {
+                var self = {events: {}};
+                self.ws = WebSocket('ws://' + document.domain + ':' + location.port);
+
+                self.ws.addEventListener('open', function(event) {
+                    let params = (new URL(document.location)).searchParams;
+                    var action = {
+                        name: params.has('name') ? params.get('name') : ''
+                    };
+                    if (params.has('force'))
+                        action.force = Boolean(params.get('force'));
+                    self.ws.send(JSON.stringify(['notebook', action]));
+                });
+
+                self.ws.addEventListener('message', function(event) {
+                    let data = JSON.parse(event.data);
+                    let code = data['code'];
+                    let value = data['value'];
+
+                    if (code == 'out') {
+                        let sid = value['ids'];
+                        let data = value['data'];
+                        if (self.events.print)
+                            self.events.print(sid, data);
+                    } else if (code == 'started') {
+                        let sid = value['ids'];
+                        if (self.events.started)
+                            self.events.started(sid);
+                    }
+                });
+
+                self.ws.addEventListener('close', function(event) {
+                    if (self.events.close)
+                        self.events.close();
+                });
+
+                return self;
+            }
+
             var notebook = Notebook(document.getElementById('container'), {});
+            var conn = Connection();
 
-            /*
-            var socket = io({transports: ['websocket'], upgrade: false});
-               function escapeHtml(unsafe) {
-                    return unsafe
-                         .replace(/&/g, "&amp;")
-                         .replace(/</g, "&lt;")
-                         .replace(/>/g, "&gt;")
-                         .replace(/"/g, "&quot;")
-                         .replace(/'/g, "&#039;");
-                }
+            conn.events.started = function(sid) {
+                notebook[sid].change_status('Running');
+            }
 
-            socket.on('out', function(data) {
+            conn.events.print = function(sid, data) {
                 var text = '', cls;
 
                 if ('out' in data) {
-                    text = escapeHtml(data['out']);
+                    text = escapeHTML(data['out']);
                     cls = 'text-primary';
                 } else if ('err' in data) {
-                    text = escapeHtml(data['err']);
+                    text = escapeHTML(data['err']);
                     cls = 'text-danger';
                 }
 
                 if (text) {
                     var html = '<span class="' + cls +'" style="white-space: pre">' + text + '</span>';
-                    notebook[data['guid']].write(html);
+                    notebook[sid].write(html);
                 }
             });
 
             notebook.events.submit = function(s) { 
                 s.clear();
-                s.change_status('Running');
-                socket.emit('run', {'guid': s.guid, 'code': s.code()}, function(answer) {
-                    s.change_status();
-                });
+                s.change_status('Sending');
+                conn.ws.send(['run', {'ids': s.guid, 'code': s.code()}]);
             };
-            */
         </script>
     </div><!-- /.container -->
     <div style="height: 20%">&nbsp;</div>

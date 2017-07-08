@@ -3,11 +3,11 @@ import asyncio
 import traceback
 from back.shell import acquire, release
 
-async def send(ws, data):
+async def send(ws, code, data=''):
     if not ws:
         return
     try:
-        message = json.dumps(data)
+        message = json.dumps({'code': code, 'value': data})
         data = await ws.send(message)
     except Exception as e:
         traceback.print_exc()
@@ -21,13 +21,14 @@ async def recv(ws):
         traceback.print_exc()
         raise
 
-async def run_code(shell, code):
+async def run_code(shell, ids, code):
     with async shell.lock:
+        await send(shell.user, 'started', {'ids': ids})
         await shell.run(code)
         data = await shell.readline()
 
         while data is not None:
-            await send(shell.user, ['out', data])
+            await send(shell.user, 'out', {'ids': ids, 'data': data})
             line = await shell.readline()
 
 async def main(ws):
@@ -41,7 +42,9 @@ async def main(ws):
                 if shell is None:
                     await send(ws, ['error', 'the notebook is busy'])
             elif action == 'run':
-                asyncio.ensure_future(run_code(shell, code))
+                ids = value['ids']
+                code = value['code']
+                asyncio.ensure_future(run_code(shell, ids, code))
     except Exception as e:
         traceback.print_exc()
         raise
