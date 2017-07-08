@@ -1,2 +1,2 @@
-# lit
+# LIT
 Literate Programming Toolkit
