@@ -1,9 +1,9 @@
 import json
 import asyncio
-import websockets
 import logging
-from back.shell import acquire, release
+import websockets
 from utils.logger import log
+from back.shell import acquire, release
 
 _log = log(__name__)
 
@@ -32,7 +32,8 @@ async def run_code(shell, ids, code):
         data = await shell.readline()
 
         while data is not None:
-            await send(shell.user, 'out', {'ids': ids, 'data': data})
+            await send(shell.user, 'out',
+                       {'ids': ids, 'data': data})
             data = await shell.readline()
 
         await send(shell.user, 'ended', {'ids': ids})
@@ -43,9 +44,9 @@ async def main(ws):
     try:
         while True:
             action, value = await recv(ws)
-
             if action == 'notebook':
-                shell = await acquire(value['name'], ws, force=value.get('force', False))
+                shell = await acquire(value['name'], ws,
+                                      force=value.get('force', False))
                 if shell is None:
                     _log.error('could not acquire the shell')
                     await send(ws, ['error', 'the notebook is busy'])

@@ -157,18 +157,13 @@ function Cell(anchor, position, notebook) {
     }
 
     self.change_status = function(state) {
-        if (state)
-            self.state = state;
-        else
-            self.state = 'Idle';
+        self.state = state;
 
-        var state_html = self.state;
         if (self.state == 'Running') {
             self.outputNode.style.display = 'block';
-            state_html = 'Running';
         }
 
-        self.stateNode.innerHTML = state_html;
+        self.stateNode.innerHTML = state;
     }
 
     self.write = function(answer) {

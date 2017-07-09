@@ -105,7 +105,7 @@
                     };
 
                     self.ws.onerror = function(event) {
-                        console.log('we error occured');
+                        console.log('ws error occured');
                     }
                 };
 
@@ -128,8 +128,6 @@
                         let code = data['code'];
                         let value = data['value'];
 
-                        console.log('CODE: ' + code);
-
                         if (code == 'out') {
                             let sid = value['ids'];
                             let data = value['data'];
@@ -143,8 +141,9 @@
                             if (self.events.opened)
                                 self.events.opened();
                         } else if (code == 'ended') {
+                            let sid = value['ids'];
                             if (self.events.ended)
-                                self.events.ended();
+                                self.events.ended(sid);
                         }
                 };
     
@@ -176,9 +175,10 @@
                     notebook.cells[sid].change_status('Running');
             }
 
-            conn.events.started = function(sid) {
-                if (sid in notebook.cells)
+            conn.events.ended = function(sid) {
+                if (sid in notebook.cells) {
                     notebook.cells[sid].change_status('Idle');
+                }
             }
 
             conn.events.print = function(sid, data) {
