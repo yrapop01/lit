@@ -2,24 +2,31 @@ import asyncio
 import signal
 import os
 from back.repl_proto import Events, encode, decode
+from utils.logger import log
 
 _REPL = 'back/repl.py'
 
 _shells = {}
 _glock = asyncio.Lock()
 
+_log = log(__name__)
+
 class Shell:
     def __init__(self, name, user):
         self._proc = None
-        self._user = None
+        self._user = user
         self._name = name
         self._lock = asyncio.Lock()
 
     async def assign(self, user, force=False):
         if self.user == user:
+            _log.warning('nothing to assign')
             return True
         if not force and not self.available:
+            _log.error('shell is busy')
             return False
+
+        _log.info('assigning shell' if user is not None else 'releasing shell')
         self._user = user
         return True
 
@@ -32,11 +39,8 @@ class Shell:
     def interrupt(self):
         os.kill(self._proc.pid, signal.SIGINT)
 
-    async def stop(self):
-        self._proc.write_eof()
-        self._proc.interrupt()
-        await self._proc.drain()
-        await self._proc.wait()
+    def stop(self):
+        os.kill(self._proc.pid, signal.SIGTERM)
 
     async def run(self, code):
         await self.writeline(Events.RUN, code)
@@ -76,16 +80,21 @@ class Shell:
         return self._user is None or not self._user.open
 
 async def acquire(name, user, force=False):
-    async with _glock:
-        if name in _shells:
-            shell = _shells[name]
-            if shell.assign(user, force):
-                return shell
-            return None
-        elif name:
-            shell = _shells[name] = Shell(user)
-        else:
-            shell = Shell(user)
+    _log.debug('trying to acquire shell named "' + name + '"')
+    assert user is not None
+
+    if name:
+        async with _glock:
+            if name in _shells:
+                shell = _shells[name]
+                if shell.assign(user, force):
+                    return shell
+                return None
+            else:
+                shell = _shells[name] = Shell(name, user)
+    else:
+        _log.debug('Creating anonymous shell')
+        shell = Shell(name, user)
 
     await shell.start()
     return shell
@@ -94,7 +103,7 @@ async def release(shell, user):
     if shell is None:
         return
     if not shell.name:
-        await shell.stop()
+        shell.stop()
         return
     async with _glock:
         if shell.user == user:
@@ -105,4 +114,4 @@ async def stop(name):
     async with _glock:
         del _shells[name]
 
-    await shell.stop()
+    shell.stop()

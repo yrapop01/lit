@@ -47,6 +47,7 @@ def repl():
                     print(encode(Events.EXC, 'Unkown event %s' % event), flush=True)
             break
         except KeyboardInterrupt:
+            # TODO: Send READY
             pass
 
 if __name__ == "__main__":

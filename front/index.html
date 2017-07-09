@@ -86,6 +86,75 @@
 
     <div class="container" id="container">
         <script>
+            function Connection() {
+                var self = {events: {}};
+
+                self.open = function() {
+                    self.ws = new WebSocket('ws://' + document.domain + ':' + location.port);
+
+                    self.ws.onopen = function(event) {
+                        self.onopen(event);
+                    };
+ 
+                    self.ws.onmessage = function(event) {
+                        self.onmessage(event);
+                    };
+
+                    self.ws.onclose = function(event) {
+                        self.onclose(event);
+                    };
+
+                    self.ws.onerror = function(event) {
+                        console.log('we error occured');
+                    }
+                };
+
+                self.send = function(obj) {
+                    self.ws.send(JSON.stringify(obj));
+                }
+
+                self.onopen = function(event) {
+                    let params = (new URL(document.location)).searchParams;
+                    var action = {
+                        name: params.has('name') ? params.get('name') : ''
+                    };
+                    if (params.has('force'))
+                        action.force = Boolean(params.get('force'));
+                    self.send(['notebook', action]);
+                };
+
+                self.onmessage = function(event) {
+                        let data = JSON.parse(event.data);
+                        let code = data['code'];
+                        let value = data['value'];
+
+                        console.log('CODE: ' + code);
+
+                        if (code == 'out') {
+                            let sid = value['ids'];
+                            let data = value['data'];
+                            if (self.events.print)
+                                self.events.print(sid, data);
+                        } else if (code == 'started') {
+                            let sid = value['ids'];
+                            if (self.events.started)
+                                self.events.started(sid);
+                        } else if (code == 'opened') {
+                            if (self.events.opened)
+                                self.events.opened();
+                        } else if (code == 'ended') {
+                            if (self.events.ended)
+                                self.events.ended();
+                        }
+                };
+    
+                self.onclose = function(event) {
+                    //self.open();
+                };
+ 
+                return self;
+            }
+
             function escapeHTML(unsafe) {
                 return unsafe
                      .replace(/&/g, "&amp;")
@@ -95,50 +164,21 @@
                      .replace(/'/g, "&#039;");
             }
 
-            function Connection() {
-                var self = {events: {}};
-                self.ws = WebSocket('ws://' + document.domain + ':' + location.port);
+            var conn = Connection();
+            var notebook = Notebook(document.getElementById('container'), {});
 
-                self.ws.addEventListener('open', function(event) {
-                    let params = (new URL(document.location)).searchParams;
-                    var action = {
-                        name: params.has('name') ? params.get('name') : ''
-                    };
-                    if (params.has('force'))
-                        action.force = Boolean(params.get('force'));
-                    self.ws.send(JSON.stringify(['notebook', action]));
-                });
-
-                self.ws.addEventListener('message', function(event) {
-                    let data = JSON.parse(event.data);
-                    let code = data['code'];
-                    let value = data['value'];
-
-                    if (code == 'out') {
-                        let sid = value['ids'];
-                        let data = value['data'];
-                        if (self.events.print)
-                            self.events.print(sid, data);
-                    } else if (code == 'started') {
-                        let sid = value['ids'];
-                        if (self.events.started)
-                            self.events.started(sid);
-                    }
-                });
-
-                self.ws.addEventListener('close', function(event) {
-                    if (self.events.close)
-                        self.events.close();
-                });
-
-                return self;
+            conn.events.opened = function() {
+                notebook.build();
             }
 
-            var notebook = Notebook(document.getElementById('container'), {});
-            var conn = Connection();
+            conn.events.started = function(sid) {
+                if (sid in notebook.cells)
+                    notebook.cells[sid].change_status('Running');
+            }
 
             conn.events.started = function(sid) {
-                notebook[sid].change_status('Running');
+                if (sid in notebook.cells)
+                    notebook.cells[sid].change_status('Idle');
             }
 
             conn.events.print = function(sid, data) {
@@ -154,15 +194,18 @@
 
                 if (text) {
                     var html = '<span class="' + cls +'" style="white-space: pre">' + text + '</span>';
-                    notebook[sid].write(html);
+                    if (sid in notebook.cells)
+                        notebook.cells[sid].write(html);
                 }
-            });
+            };
 
             notebook.events.submit = function(s) { 
                 s.clear();
-                s.change_status('Sending');
-                conn.ws.send(['run', {'ids': s.guid, 'code': s.code()}]);
+                s.change_status("Sending");
+                conn.send(["run", {"ids": s.guid, "code": s.code()}]);
             };
+
+            conn.open();
         </script>
     </div><!-- /.container -->
     <div style="height: 20%">&nbsp;</div>

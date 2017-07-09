@@ -107,7 +107,7 @@ function Cell(anchor, position, notebook) {
     self.state = 'Idle';
     self.notebook = notebook;
 
-    notebook[self.guid] = self;
+    notebook.cells[self.guid] = self;
 
     var html = CELL_HTML;
     html = replaceAll(html, "{ID}", self.guid);
@@ -168,7 +168,7 @@ function Cell(anchor, position, notebook) {
             state_html = 'Running';
         }
 
-        self.stateNode.innerHTML = 'State: ' + state_html;
+        self.stateNode.innerHTML = state_html;
     }
 
     self.write = function(answer) {
@@ -208,10 +208,12 @@ function Cell(anchor, position, notebook) {
 }
 
 function Notebook(container) {
-    container.insertAdjacentHTML('beforeBegin', CELL_CSS);
+    var self = {events: {}, cells: {}, container: container};
 
-    var notebook = {events: {}, cells: {}};
-    var cell = Cell(container, 'beforeEnd', notebook);
+    self.build = function() {
+        self.container.insertAdjacentHTML('beforeBegin', CELL_CSS);
+        var cell = Cell(container, 'beforeEnd', self);
+    }
 
-    return notebook;
+    return self;
 }
